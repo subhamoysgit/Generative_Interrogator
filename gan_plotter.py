@@ -14,11 +14,8 @@ class GANplotter(pl.Callback):
 
 
     def on_train_epoch_end(self, trainer, pl_module):
-        """_summary_
-
-        Args:
-            trainer (_type_): _description_
-            pl_module (_type_): _description_
+        """
+        logs 6 GAN generated images at the end of every epoch using wandb
         """        
         figure(figsize=(8, 3), dpi=300)
 
