@@ -59,12 +59,11 @@ class Generator(nn.Module):
     
 class GAN(pl.LightningModule):
     def __init__(self, arch='simple', latent_dim = 100, lr = 0.0005):
-        """_summary_
-
+        """Generative Adversarial Network (GAN)
         Args:
-            arch (str, optional): _description_. Defaults to 'simple'.
-            latent_dim (int, optional): _description_. Defaults to 100.
-            lr (float, optional): _description_. Defaults to 0.0005.
+            arch (str): Architecture. Defaults to 'simple'.
+            latent_dim (int): Latent Space dimensionality. Defaults to 100.
+            lr (float): Learning rate. Defaults to 0.0005.
         """        
         super().__init__()
         self.save_hyperparameters()
