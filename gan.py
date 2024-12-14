@@ -19,10 +19,10 @@ from matplotlib.pyplot import imshow, figure
 
 class Discriminator(nn.Module):
     def __init__(self, arch = 'simple'):
-        """_summary_
+        """GAN Discriminator
 
         Args:
-            arch (str, optional): _description_. Defaults to 'simple'.
+            arch (str): Defaults to 'simple' utilizing SimEnc architecture
         """        
         super().__init__()
         if arch=='simple':
@@ -39,14 +39,13 @@ class Discriminator(nn.Module):
         return torch.sigmoid(x)
     
     
-# Generate Fake Data: output like real data [1, 28, 28] and values -1, 1
 class Generator(nn.Module):
     def __init__(self, latent_dim, arch = 'simple'):
-        """_summary_
+        """GAN Generator
 
         Args:
-            latent_dim (_type_): _description_
-            arch (str, optional): _description_. Defaults to 'simple'.
+            latent_dim (int): latent space dimensionality
+            arch (str, optional): Defaults to 'simple' utilizing SimDec architecture
         """        
         super().__init__()
         if arch=='simple':
