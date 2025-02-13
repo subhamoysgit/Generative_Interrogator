@@ -4,3 +4,4 @@
 * Queries Generated Data to Retrieve Real Matches
 * Demonstrated on Space-weather HMI Active Region Patches (SHARPs)
 * [Arxiv link](https://arxiv.org/abs/2502.05351)
+* [Pipeline](pipeline.png)
