@@ -23,6 +23,8 @@ import cv2
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.optimize import curve_fit
 from scipy.fft import fft2, fftshift
+from scipy.ndimage import sobel
+from skimage import io
 
 def gaussian(x, sigma):
     """Gaussian function for curve fitting"""
@@ -34,7 +36,7 @@ def fit_gaussian_curvefit(image, bins=256, mask=None):
     using non-linear least squares (curve_fit).
     
     Returns:
-        amp, mu, sigma
+        sigma
     """
     # Get pixel values
     if mask is not None:
@@ -101,6 +103,23 @@ def freq_powerLaw_(image):
     z = np.polyfit(np.log10(freq), np.log10(radial_profile[freq]), 1)
     return freq, z, radial_profile
 
+def grad(img):
+    gx, gy = np.gradient(img)
+
+    # gradient magnitude
+    grad_mag = np.sqrt(gx**2 + gy**2)
+
+    # average gradient
+    avg_grad = np.mean(grad_mag)
+    return avg_grad
+
+def grad_(img):
+    gx = sobel(img, axis=1)   # horizontal gradient
+    gy = sobel(img, axis=0)   # vertical gradient
+
+    grad_mag = np.hypot(gx, gy)
+    avg_grad = grad_mag.mean()
+    return avg_grad
 
 def calculate_srij_R(s, th):
     """produces image of High-Gradient Polarity Transition Region (R)
