@@ -8,3 +8,5 @@
 ![pipeline](pipeline.png)
 * Comparison of SSL image search with simpler ones below-
 ![image_retrieval](image_search.png)
+
+[![DOI](https://zenodo.org/badge/17613896.svg)](https://zenodo.org/badge/latestdoi/17613896)
