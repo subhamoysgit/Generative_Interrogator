@@ -21,6 +21,86 @@ import datetime
 import matplotlib.pyplot as plt
 import cv2
 from sklearn.metrics.pairwise import cosine_similarity
+from scipy.optimize import curve_fit
+from scipy.fft import fft2, fftshift
+
+def gaussian(x, sigma):
+    """Gaussian function for curve fitting"""
+    return (1/np.sqrt(2*np.pi)/sigma) * np.exp(-0.5 * ((x) / sigma) ** 2)
+
+def fit_gaussian_curvefit(image, bins=256, mask=None):
+    """
+    Fits a Gaussian distribution to the histogram of an image
+    using non-linear least squares (curve_fit).
+    
+    Returns:
+        amp, mu, sigma
+    """
+    # Get pixel values
+    if mask is not None:
+        pixels = image[mask > 0].ravel().astype(np.float64)
+    else:
+        pixels = image.ravel()#.astype(np.float64)
+
+    # Histogram
+    hist, bin_edges = np.histogram(pixels, bins=bins, density=True)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+    # Initial guesses: amplitude, mean, std
+    p0 = pixels.std()
+
+    # Curve fitting
+    popt, _ = curve_fit(gaussian, bin_centers, hist, p0=p0)
+
+    return popt, bin_centers, hist
+
+def freq_powerLaw(image):
+    #2D FFT and shift
+    f = fft2(image)#(np.abs(image))
+    fshift = fftshift(f)
+    magnitude_spectrum = np.abs(fshift)**2
+
+    #Create radius array
+    y, x = np.indices(image.shape)
+    center = np.array([(x.max() - x.min())/2.0, (y.max() - y.min())/2.0])
+    r = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+
+    # Bin and average
+    r = r.astype(int)
+    tbin = np.bincount(r.ravel(), magnitude_spectrum.ravel())
+    nr = np.bincount(r.ravel())
+    radial_profile = tbin / np.maximum(nr, 1)
+    #freq = np.linspace(10,radial_profile.shape[0]-1, radial_profile.shape[0]-10).astype('int')
+    freq = np.linspace(1,10,10).astype('int')
+    z = np.polyfit(np.log10(freq), np.log10(radial_profile[freq]), 1)
+    return freq, z, radial_profile
+
+def freq_powerLaw_(image):
+    # 2D FFT and shift
+    Ny, Nx = image.shape
+    f = fft2(image)#(np.abs(image))
+    fshift = fftshift(f)
+    magnitude_spectrum = np.abs(fshift)**2
+
+    # Step 2: Create radius array
+    kx_unshifted = (np.arange(Nx) + Nx//2) % Nx - Nx//2   # 0..63, -64..-1
+    kx = np.fft.fftshift(kx_unshifted)                    # -64..-1, 0..63
+
+    ky_unshifted = (np.arange(Ny) + Ny//2) % Ny - Ny//2
+    ky = np.fft.fftshift(ky_unshifted)
+    KX, KY = np.meshgrid(kx, ky, indexing="xy")
+    r = np.sqrt(KX**2 + KY**2)
+    
+    # Bin and average
+    r = r.astype(int)
+    tbin = np.bincount(r.ravel(), magnitude_spectrum.ravel())
+    nr = np.bincount(r.ravel())
+    radial_profile = tbin / np.maximum(nr, 1)
+    #freq = np.linspace(10,radial_profile.shape[0]-1, radial_profile.shape[0]-10).astype('int')
+    freq = np.linspace(1,10,10).astype('int')
+    z = np.polyfit(np.log10(freq), np.log10(radial_profile[freq]), 1)
+    return freq, z, radial_profile
+
 
 def calculate_srij_R(s, th):
     """produces image of High-Gradient Polarity Transition Region (R)
@@ -38,6 +118,9 @@ def calculate_srij_R(s, th):
     pos_d = binary_dilation(pos, kernel)
     neg_d = binary_dilation(neg, kernel)
     return s*pos_d*neg_d
+
+
+
 
 
 def calculate_params(s, th):
@@ -78,6 +161,39 @@ def calculate_params(s, th):
    
    
    
+# def calculate_params_(s, th):
+#     """calculates physical parameters from magnetic patches
+
+#     Args:
+#         s (np.ndarray): input magnetic patch
+#         th (float): threshold
+
+#     Returns:
+#         physical parameters
+#     """
+#     pos = (s>th).astype(float)
+#     neg = (s<-th).astype(float)
+#     ind_p_y = np.array(np.where(pos==1))[0]
+#     ind_p_x = np.array(np.where(pos==1))[1]
+#     ind_n_y = np.array(np.where(neg==1))[0]
+#     ind_n_x = np.array(np.where(neg==1))[1]
+#     cen_p_y = np.sum(ind_p_y*s[s>th])/np.sum(s[s>th])
+#     cen_p_x = np.sum(ind_p_x*s[s>th])/np.sum(s[s>th])
+#     cen_n_y = np.sum(ind_n_y*s[s<-th])/np.sum(s[s<-th])
+#     cen_n_x = np.sum(ind_n_x*s[s<-th])/np.sum(s[s<-th])
+#     dis = (cen_n_x - cen_p_x)**2 + (cen_n_y - cen_p_y)**2
+#     tilt = np.arcsin((cen_n_y - cen_p_y)/(dis**0.5))
+#     dis = (dis**0.5)/(128*np.sqrt(2))
+#     uflux = np.abs(s).sum()/(128*128)
+#     pflux = np.abs(s[s>0]).sum()/np.sum(s>0)
+#     nflux = np.abs(s[s<0]).sum()/np.sum(s<0)
+#     eflux = s[s>th].sum() + s[s<-th].sum()
+#     area = (pos.sum() + neg.sum())/(128*128)
+#     lp = cen_p_x-cen_n_x
+#     R = np.sum(np.abs(calculate_srij_R(s, th)))
+#     return dis, tilt, uflux, pflux, nflux, eflux, area, lp, R
+
+
 def calculate_params_(s, th):
     """calculates physical parameters from magnetic patches
 
@@ -90,26 +206,62 @@ def calculate_params_(s, th):
     """
     pos = (s>th).astype(float)
     neg = (s<-th).astype(float)
-    ind_p_y = np.array(np.where(pos==1))[0]
-    ind_p_x = np.array(np.where(pos==1))[1]
-    ind_n_y = np.array(np.where(neg==1))[0]
-    ind_n_x = np.array(np.where(neg==1))[1]
-    cen_p_y = np.sum(ind_p_y*s[s>th])/np.sum(s[s>th])
-    cen_p_x = np.sum(ind_p_x*s[s>th])/np.sum(s[s>th])
-    cen_n_y = np.sum(ind_n_y*s[s<-th])/np.sum(s[s<-th])
-    cen_n_x = np.sum(ind_n_x*s[s<-th])/np.sum(s[s<-th])
-    dis = (cen_n_x - cen_p_x)**2 + (cen_n_y - cen_p_y)**2
-    tilt = np.arcsin((cen_n_y - cen_p_y)/(dis**0.5))
-    dis = (dis**0.5)/(128*np.sqrt(2))
-    uflux = np.abs(s).sum()/(128*128)
-    pflux = np.abs(s[s>0]).sum()/np.sum(s>0)
-    nflux = np.abs(s[s<0]).sum()/np.sum(s<0)
-    eflux = s[s>th].sum() + s[s<-th].sum()
-    area = (pos.sum() + neg.sum())/(128*128)
-    lp = cen_p_x-cen_n_x
-    R = np.sum(np.abs(calculate_srij_R(s, th)))
-    return dis, tilt, uflux, pflux, nflux, eflux, area, lp, R
+    if pos.sum()>0 and neg.sum()>0:
+        ind_p_y = np.array(np.where(pos==1))[0]
+        ind_p_x = np.array(np.where(pos==1))[1]
+        ind_n_y = np.array(np.where(neg==1))[0]
+        ind_n_x = np.array(np.where(neg==1))[1]
+        cen_p_y = np.sum(ind_p_y*s[pos==1])/np.sum(s[pos==1])
+        cen_p_x = np.sum(ind_p_x*s[pos==1])/np.sum(s[pos==1])
+        cen_n_y = np.sum(ind_n_y*s[neg==1])/np.sum(s[neg==1])
+        cen_n_x = np.sum(ind_n_x*s[neg==1])/np.sum(s[neg==1])
+        dis = (cen_n_x - cen_p_x)**2 + (cen_n_y - cen_p_y)**2
+        tilt = np.arcsin((cen_n_y - cen_p_y)/(dis**0.5))
+        dis = (dis**0.5)/(128*np.sqrt(2))
+        uflux = np.abs(s).sum()/(128*128)
+        pflux = np.abs(s[s>0]).sum()/np.sum(s>0)
+        nflux = np.abs(s[s<0]).sum()/np.sum(s<0)
+        eflux = s[pos==1].sum() + s[neg==1].sum()
+        area = (pos.sum() + neg.sum())/(128*128)
+        lp = cen_p_x - cen_n_x
+        R = np.sum(np.abs(calculate_srij_R(s, th)))
+        return dis, tilt, uflux, pflux, nflux, eflux, area, lp, R
+    else:
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
     
+def mahalanobis_from_point(arr1, arr2, Sigma=None):
+    """
+    Compute Mahalanobis distances from a single point arr1 to each row in arr2.
+    
+    Args:
+        arr1 : (1, d) array or (d,) vector (the reference point)
+        arr2 : (N, d) array
+        Sigma : (d, d) covariance matrix (if None, estimated from arr2)
+        
+    Returns:
+        dists : (N,) array of Mahalanobis distances
+    """
+    # 1d to 2d row array
+    arr1 = np.atleast_2d(arr1)
+    assert arr1.shape[1] == arr2.shape[1], "Both arrays must have same number of columns"
+    
+    # Estimate covariance if not provided
+    if Sigma is None:
+        Sigma = np.cov(arr2, rowvar=False, bias=False)
+    
+    # Regularize for numerical stability
+    Sigma += 1e-8 * np.eye(Sigma.shape[0])
+    
+    # Invert covariance once
+    VI = np.linalg.inv(Sigma)
+    
+    # Compute differences to each row
+    diff = arr2 - arr1  # shape (N, d)
+    
+    # Mahalanobis distance computation
+    dists = np.sqrt(np.einsum('ni,ij,nj->n', diff, VI, diff))
+    
+    return dists
     
 def hyperplane(latent_space, clf):
     """projects latent vector on decision boundaries (hyperplane) defined by clf
