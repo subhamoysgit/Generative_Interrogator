@@ -9,4 +9,4 @@
 * Comparison of SSL image search with simpler ones below-
 ![image_retrieval](image_search.png)
 
-[![DOI](https://zenodo.org/badge/17613896.svg)](https://zenodo.org/badge/latestdoi/17613896)
+[![DOI](https://zenodo.org/badge/903448865.svg)](https://doi.org/10.5281/zenodo.17613895)
