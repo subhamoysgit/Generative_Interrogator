@@ -1,26 +1,8 @@
-import os
 import torch
-import torchvision
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import MNIST
-from dataset import SHARPdataset
-import matplotlib.pyplot as plt
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-import pytorch_lightning as pl
-import wandb
-from enc_dec import ResNet18Enc, ResNet18Dec, SimEnc, SimDec
-from matplotlib.pyplot import imshow, figure
-from dataset_interPrete import dataset_interPrete
-from interPrete import interPrete
 from gan import GAN
 import numpy as np
-from skimage.morphology import binary_dilation, binary_erosion
 import pandas as pd
 import cv2
 import h5py
@@ -97,23 +79,25 @@ def image_to_GAN_latent(filename, gan_idx=81, iter=1000, seed=1):
     
     return l[idx], imgs[idx], weights[idx], target[0,0,:,:].cpu()
 
-def main():
-    # DIR = '/d0/kvandersande/sharps_hdf5/'
-    # filenames = sorted(glob.glob(DIR+'*.h5'))
-    # df = {'files':filenames, 'latent_GAN':[]}
+def save_GAN_latent():
+    DIR = '/d0/kvandersande/sharps_hdf5/'
+    filenames = sorted(glob.glob(DIR+'*.h5'))
+    df = {'files':filenames, 'latent_GAN':[]}
     
-    # for j in range(len(filenames)):
-    #     loss, weights  = [], []
-    #     for i in range(10):
-    #         l, _, weight, _ = image_to_GAN_latent(filenames[j], iter=1000, gan_idx=81, seed=i)
-    #         loss.append(l)
-    #         weights.append(weight)
+    for j in range(len(filenames)):
+        loss, weights  = [], []
+        for i in range(10):
+            l, _, weight, _ = image_to_GAN_latent(filenames[j], iter=1000, gan_idx=81, seed=i)
+            loss.append(l)
+            weights.append(weight)
         
-    #     idx = np.argmin(np.array(loss))
-    #     df['latent_GAN'].append(weights[idx])
-    #     print(j, filenames[j])
-    #     pickle.dump(df,open('/d0/subhamoy/models/gan/sharps/latent_space.p', 'wb'))
- 
+        idx = np.argmin(np.array(loss))
+        df['latent_GAN'].append(weights[idx])
+        print(j, filenames[j])
+        pickle.dump(df,open('/d0/subhamoy/models/gan/sharps/latent_space.p', 'wb'))
+
+def main():
+    save_GAN_latent()
     ep = '81'
     name = f'GAN_sharp_experiment_ld_100_bs_32_lr_0.0005_stride_1_crop_False_arch_simple_epoch={ep}.ckpt'
     MODEL_DIR = '/d0/subhamoy/models/gan/sharps/'
