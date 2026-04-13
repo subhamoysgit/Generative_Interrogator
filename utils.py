@@ -318,7 +318,7 @@ def project_latent_2d(latent_space,
     M = np.max(embeddings_2d[:latent_master.shape[0]//2,:], axis=0)
     m = np.min(embeddings_2d[:latent_master.shape[0]//2,:], axis=0)
     embeddings_2d = (embeddings_2d - m) / (M - m)
-    return embeddings_2d
+    return embeddings_2d, m, M
 
 
 def image_on_latent(gen_imgs, embeddings_2d,
@@ -347,6 +347,7 @@ def image_on_latent(gen_imgs, embeddings_2d,
     shown_images_idx = []
     shown_images = np.array([[1.0, 1.0]])
     iterator = [i for i in range(embeddings_2d.shape[0])]
+    np.random.seed(23)
     np.random.shuffle(iterator)
     for i in iterator:
         # only show image if it is sufficiently far away from the others
@@ -415,7 +416,7 @@ def image_on_latent(gen_imgs, embeddings_2d,
     print(rcp["figure.figsize"][0], thumbnail_size)
     if type=='custom':
         line_idx = np.argsort(plane_2d[:,0])
-        ax.plot(1-plane_2d[line_idx,1],plane_2d[line_idx,0],'-r',zorder=100)
+        #ax.plot(1-plane_2d[line_idx,1],plane_2d[line_idx,0],'-r',zorder=100)
     else:
         ax.plot(1-plane_2d[:,1],plane_2d[:,0],'*r',zorder=100)
     ax.set_xticks([])
